@@ -3,7 +3,7 @@ import nsetools
 from nsetools import Nse
 nse = Nse()
 
-stock = nse.get_fno_lot_sizes()
+stock = nse.get_active_monthly()
 # stock = nse.get_advances_declines()
 #stock = nse.get_index_list()
 # stock = nse.get_active_monthly()
@@ -17,8 +17,10 @@ stock = nse.get_fno_lot_sizes()
 # stock = nse.get_year_low()
 # stock = nse.nse_opener()
 print(stock)
-# from nsepy import *
-#
-# stock_quote = get_quote('SBIN')
-#
-# print(stock_quote)
+import nsepy
+
+stock_quote = nsepy.history.equity_symbol_list_url.url
+
+print(stock_quote)
+
+javascript:;javascript:;

@@ -4,7 +4,7 @@ import yfinance as yf
 
 prices=pd.read_csv("Stock_Symbol_NXT50.csv")
 stocks = prices['Symbol'].tolist()
-start_date = dt.date(2020,5,1)
+start_date = dt.date(2007,1,1)
 end_date = dt.date.today()
 stk_split_data = pd.DataFrame()
 

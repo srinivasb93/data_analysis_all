@@ -1,27 +1,28 @@
 import nsepy
 from nsepy import get_history
 from datetime import date
-today_dt = date(2021,9,7)
 import sqlalchemy as sa
 import urllib.parse
 
-#Use this for windows authentication
+today_dt = date(2021, 9, 7)
+
+# Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-MAK81E6\SQLEXPRESS;"
+                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
                                  "Trusted_Connection=yes")
 
 '''
 #Use this for SQL server authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=dagger;"
+                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                  "DATABASE=test;"
                                  "UID=user;"
                                  "PWD=password")
 '''
 print(today_dt)
 # exit()
-#Connection String
+# Connection String
 engine = sa.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
 
 # Connect to the required SQL Server

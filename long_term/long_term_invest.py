@@ -11,14 +11,14 @@ nse = Nse()
 
 connection = pyodbc.connect(
                             'Driver={SQL Server};'
-                            'Server=DESKTOP-MAK81E6\SQLEXPRESS;'
+                            'Server=DESKTOP-BBENH2A\SQLEXPRESS;'
                             'Database=NSEDATA;'
                             'Trusted_Connection=yes;'
                            )
 
 # Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-MAK81E6\SQLEXPRESS;"
+                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                  "DATABASE=StockAnalysis;"
                                  "Trusted_Connection=yes")
 
@@ -146,13 +146,13 @@ class LongTermStrategy:
 # data_all.to_sql(name='ALL_DATA_BKP',con=connection2,if_exists='replace')
 # del data_all
 # gc.collect()
-connection2.execute('DROP TABLE IF EXISTS dbo.LONGTERM_COMBINED_BKP')
-connection2.execute('DROP TABLE IF EXISTS dbo.LONGTERM_IND_BKP')
-connection2.execute('DROP TABLE IF EXISTS dbo.ALL_DATA_BKP')
-
-connection2.execute('SELECT * INTO dbo.LONGTERM_COMBINED_BKP FROM LONGTERM_COMBINED')
-connection2.execute('SELECT * INTO dbo.LONGTERM_IND_BKP FROM LONGTERM_IND')
-connection2.execute('SELECT * INTO dbo.ALL_DATA_BKP FROM ALL_DATA')
+# connection2.execute('DROP TABLE IF EXISTS dbo.LONGTERM_COMBINED_BKP')
+# connection2.execute('DROP TABLE IF EXISTS dbo.LONGTERM_IND_BKP')
+# connection2.execute('DROP TABLE IF EXISTS dbo.ALL_DATA_BKP')
+#
+# connection2.execute('SELECT * INTO dbo.LONGTERM_COMBINED_BKP FROM LONGTERM_COMBINED')
+# connection2.execute('SELECT * INTO dbo.LONGTERM_IND_BKP FROM LONGTERM_IND')
+# connection2.execute('SELECT * INTO dbo.ALL_DATA_BKP FROM ALL_DATA')
 
 cursor = connection.cursor()
 cursor.execute('select * from dbo.stocks')
@@ -163,14 +163,14 @@ final_data = pd.DataFrame()
 all_data = pd.DataFrame()
 stock_list = ['MOTHERSUMI', 'BAJFINANCE', 'HDFCBANK', 'ASIANPAINT', 'RELAXO', 'SONATSOFTW', 'ICICIBANK', 'NESTLEIND'
               , 'KOTAKBANK', 'BRITANNIA', 'RELIANCE', 'TITAN', 'HINDUNILVR', 'PIDILITIND', 'ITC', 'INFY', 'TCS']
-
+stock_list = ['MOTHERSUMI','HDFCBANK']
 for stock in stock_list:
     print(f'Processing Stock : {stock}')
     query = "SELECT * FROM DBO." + stock + " WHERE DATE >= '2020-01-01 00:00:00' ORDER BY DATE ASC"
     # query = "SELECT * FROM DBO." + "SBIN" + " WHERE DATE >= '2021-02-02 00:00:00'"
     # query = "SELECT * FROM DBO.SONATSOFTW ORDER BY DATE ASC"
     stock_data = pd.read_sql(query, con=connection)
-    stock_data['Month'] = stock_data['Date'].dt.month
+    stock_data['Month'] = pd.to_datetime(stock_data['Date'], format='%Y-%m-%d').dt.month
     stock_data.set_index('Date', inplace=True)
     stock_data['Month_Chg'] = stock_data['Month'] - stock_data['Month'].shift(1)
     stock_trigger = LongTermStrategy(stock_data)
@@ -187,7 +187,7 @@ for stock in stock_list:
 tot_investment = round(final_data['Invested_Amt'].sum(), 2)
 curr_value = round(final_data['Current_Value'].sum(), 2)
 all_data.reset_index(inplace=True)
-all_data.to_sql(name='ALL_DATA',con=connection2,if_exists='replace')
+all_data.to_sql(name='ALL_DATA',con=connection2,if_exists='replace', index=False)
 all_data_grouped = all_data.groupby(['Date'])
 grouped_dict = {}
 
@@ -206,7 +206,8 @@ combined_data['PnL_Change'] = round(combined_data['PnL'] - combined_data['PnL'].
 combined_data['PnL_%'] = round((combined_data['PnL']/combined_data['Total_Invested'])*100,2)
 combined_data = combined_data[['Total_Invested','Invested_on_day','Current_Value',
                          'Value_Change','PnL','PnL_Change','PnL_%']]
-combined_data.to_sql(name='LONGTERM_COMBINED', con=connection2, if_exists='replace')
+combined_data.reset_index(inplace=True)
+combined_data.to_sql(name='LONGTERM_COMBINED', con=connection2, if_exists='replace', index=False)
 # combined_data.plot(y=['Total_Invested','Current_Value'])
 # plt.show()
 

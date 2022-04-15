@@ -5,7 +5,7 @@ import numpy as np
 
 connection = pyodbc.connect(
                             'Driver={SQL Server};'
-                            'Server=DESKTOP-MAK81E6\SQLEXPRESS;'
+                            'Server=DESKTOP-BBENH2A\SQLEXPRESS;'
                             'Database=StockAnalysis;'
                             'Trusted_Connection=yes;'
                            )

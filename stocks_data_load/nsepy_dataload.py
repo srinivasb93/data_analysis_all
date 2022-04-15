@@ -1,21 +1,21 @@
+import time
+
 import pandas as pd
 import sqlalchemy as sa
 import datetime as dt
-import pyodbc
 import urllib
-import quandl
 import yfinance as yf
 from nsepy import get_history
 
 startdate = dt.date(2007,1,1)
 enddate = dt.date.today()
 
-split_df = pd.read_csv("../Stock_SplitData_N50.csv")
-#prices=pd.read_csv('Stock_Symbol_Mid50.csv')
+split_df = pd.read_csv(r"C:\Users\srinivas\PycharmProjects\data_analysis_all\ref_data\Stock_SplitData_N50.csv")
+prices = pd.read_csv(r'C:\Users\srinivas\PycharmProjects\data_analysis_all\ref_data\Stock_Symbol.csv')
 #prices=pd.read_csv('Nifty_Midcap_50.csv')
 # prices=pd.read_csv('Nifty_Next_50.csv')
 # stocks = prices['Symbol'].tolist()
-stocks = ['TATACONSUM']
+stocks = ['MOTHERSUMI']
 
 split_count_dict = dict(split_df['Stock'].value_counts())
 split_stocks_list = split_df['Stock'].unique().tolist()
@@ -35,7 +35,7 @@ def adj_close(data,stock):
 
 #Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-MAK81E6\SQLEXPRESS;"
+                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
                                  "Trusted_Connection=yes")
 
@@ -53,6 +53,8 @@ engine = sa.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
 
 # Connect to the required SQL Server
 conn=engine.connect()
+
+x = 0
 
 for stock in stocks:
     print("Extracting Data from NSE for the stock : {}" .format(stock))
@@ -80,6 +82,8 @@ for stock in stocks:
         stock = 'MMFIN'
     stock_data.to_sql(name=stock,con=conn,if_exists='replace',index=False)
     print("Data Load done for the stock : {}".format(stock))
+    if x != 0 and x%2 == 0:
+        time.sleep(10)
 #Read data from a SQL server table
 # df1=pd.read_sql_table('STOCK_DATA',con=conn)
 # print(df1.head())

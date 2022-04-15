@@ -11,7 +11,7 @@ class Dataload:
     # Class to enable bhav copy data extraction and load into corresponding tables in SQL for each stock
     # Use this for windows authentication
     params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                     "SERVER=DESKTOP-MAK81E6\SQLEXPRESS;"
+                                     "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                      "DATABASE=NSEDATA;"
                                      "Trusted_Connection=yes")
 
@@ -31,6 +31,7 @@ class Dataload:
     except ConnectionError:
         print('Job aborted due to SQL Server connection issue')
     ###########################################################################################################
+
     def extract_bhav_copy(self, extract_date):
         # Method to extract bhav copy for the passed date
         try:
@@ -53,17 +54,28 @@ class Dataload:
             print('Bhav copy is not avaialble for Date {} : Error Msg :  {}'.format(extract_date, e.__str__()))
             return 'File not available'
     ############################################################################################################
-    def read_sql_data(self, data_type='Stock'):
-        """ Method to read bhav data for both stocks and indices """
+
+    def get_stocks_index_data(self, data_type='Stock'):
+        """ Method to get stocks and indices list from SQL database """
         if data_type == 'Stock':
-            query = "SELECT NAME FROM dbo.STOCKS"
-            bhav_table = 'BHAVCOPY'
+            query = """select SYMBOL from [NSEDATA].[dbo].[ALL_STOCKS] where stk_index = 'NIFTY 200'
+                        UNION
+                        select SYMBOL from [NSEDATA].[dbo].[ALL_STOCKS] where stk_index = 'MY STOCKS'"""
         else:
             query = "SELECT NAME FROM dbo.STOCK_INDICES UNION SELECT NAME FROM dbo.STOCK_SECTORS"
-            bhav_table = 'BHAVCOPY_INDICES'
 
         stocks_data = self.conn.execute(query)
         stocks = stocks_data.fetchall()
+        return stocks
+    ############################################################################################################
+
+    def read_bhav_data(self, data_type='Stock'):
+        """ Method to read bhav data for both stocks and indices """
+        if data_type == 'Stock':
+            bhav_table = 'BHAVCOPY'
+        else:
+            bhav_table = 'BHAVCOPY_INDICES'
+
         # Extract stock/index bhavcopy data into a dataframe
         bhav_query = "SELECT * FROM dbo." + bhav_table
         data = pd.read_sql_query(bhav_query, con=self.conn, parse_dates=True)
@@ -79,9 +91,9 @@ class Dataload:
                                           'CLOSE': 'Close', 'TOTTRDQTY': 'Volume'}, inplace=True)
             self.df_today.set_index('NAME', inplace=True)
             self.df_today['Date'] = pd.to_datetime(self.df_today['Date'], format='%d-%m-%Y')
-        return stocks
     ##############################################################################################################
-    def load_sql_stock_data(self, stock):
+
+    def load_stock_data(self, stock):
         """ Method to load data for each stock """
         if stock == 'BAJAJAUTO':
             stock = 'BAJAJ-AUTO'
@@ -111,6 +123,7 @@ class Dataload:
         data_to_add.to_sql(name=stock, con=self.conn, if_exists='append', index=False)
         print("Data Load done for the stock : {}".format(stock))
     ################################################################################################################
+
     def load_index_data(self, stock):
         """ Method to append index data from bhav table to Index table for the required date """
         self.df_today.index = self.df_today.index.str.upper()
@@ -151,28 +164,51 @@ class Dataload:
         data_to_add.to_sql(name=stock, con=self.conn, if_exists='append', index=False)
         print("Data Load done for the Index : {}".format(stock))
     #################################################################################################################
+
     @staticmethod
     def get_max_date(stock='SBIN'):
         """ Method to extract max date to identify the data to be loaded for days until current date """
-        try:
-            # Extract maximum date for until which data is present in SQL for a stock
-            query_max_date = "SELECT max(DATE) FROM dbo." + stock
-            startdate = Dataload.conn.execute(query_max_date)
-            start_dt = startdate.fetchall()
-            start_dt = start_dt[0][0]
-            start_dt = pd.to_datetime(start_dt).date()
-            return start_dt
-            # Exception handling for no data in SQL for the stock
-        except:
-            print('No data for the stock {}'.format(stock))
+        if stock == 'BAJAJ-AUTO':
+            stock = 'BAJAJAUTO'
+        if stock == 'M&M':
+            stock = 'MM'
+        if stock == 'MCDOWELL-N':
+            stock = 'MCDOWELL'
+        if stock == 'L&TFH':
+            stock = 'LTFH'
+        if stock == 'M&MFIN':
+            stock = 'MMFIN'
+        if stock == 'NIFTY Smallcap 100':
+            stock = 'NIFTY_SMLCAP_100'
+        if stock == 'Nifty Smallcap 250':
+            stock = 'NIFTY_SMLCAP_250'
+        if stock == 'Nifty Smallcap 50':
+            stock = 'NIFTY_SMLCAP_50'
+        if stock == 'Nifty Infrastructure':
+            stock = 'NIFTY_INFRA'
+        if stock == 'Nifty Services Sector':
+            stock = 'NIFTY_SERV_SECTOR'
+        if stock == 'Nifty India Consumption':
+            stock = 'NIFTY_CONSUMPTION'
+        if stock == 'Nifty Financial Services':
+            stock = 'NIFTY_FIN_SERVICE'
+        # Extract maximum date for until which data is present in SQL for a stock
+        query_max_date = "SELECT max(DATE) FROM dbo." + stock
+        startdate = Dataload.conn.execute(query_max_date)
+        start_dt = startdate.fetchall()
+        start_dt = start_dt[0][0]
+        start_dt = pd.to_datetime(start_dt).date()
+        return start_dt
+
 
 # Specify stock or index type
 stock_index = ['Stock', 'Index']
-# stock_index = ['Stock']
+# stock_index = ['Index']
 # Create dataload object to start with the data load
 dataload = Dataload()
 # Capture stocks/indices for which data load is not complete
 missing_data_load = {}
+
 
 if __name__ == '__main__':
     """ Call required methods in this module for data load """
@@ -198,25 +234,29 @@ if __name__ == '__main__':
             print(f'Bhav Data extraction is complete for the Date : {extract_date}')
             for stock_type in stock_index:
                 # Get list of stocks/indices
-                stocks_list = dataload.read_sql_data(stock_type)
+                stocks_list = list(zip(*dataload.get_stocks_index_data(stock_type)))[0]
+                # Read Bhav Data for Stocks or Indices
+                dataload.read_bhav_data(stock_type)
                 if stock_type == 'Stock':
                     # Call data load method for each stock
                     for stock in stocks_list:
-                        stock = stock[0]
-                        date_diff = extract_date - dataload.get_max_date(stock)
-
+                        try:
+                            date_diff = extract_date - dataload.get_max_date(stock)
+                            # Exception handling for no data in SQL for the stock
+                        except:
+                            print('No data for the stock : {}'.format(stock))
+                            continue
                         if date_diff.days <= 0:
                             print('skipped load for Stock : {}'.format(stock))
                             continue
                         try:
-                            dataload.load_sql_stock_data(stock)
+                            dataload.load_stock_data(stock)
                         except:
                             print('Data Load is not complete for {}'.format(stock))
                             missing_data_load.update('stock', (stock, extract_date))
                 else:
                     # Call data load method for each index
                     for nse_index in stocks_list:
-                        nse_index = nse_index[0]
                         date_diff = extract_date - dataload.get_max_date(nse_index)
 
                         if date_diff.days <= 0:

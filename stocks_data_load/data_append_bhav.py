@@ -19,7 +19,7 @@ bhavdate = dt.date(2021,3,5)
 
 #Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-MAK81E6\SQLEXPRESS;"
+                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
                                  "Trusted_Connection=yes")
 

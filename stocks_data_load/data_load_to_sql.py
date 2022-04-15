@@ -1,17 +1,9 @@
-
 import pandas as pd
 import sqlalchemy as sa
-import datetime as dt
-import pyodbc
-import urllib
-import quandl
-import yfinance as yf
-from nsepy import get_history
+import urllib.parse
+import os
 
-stock = 'MOTHERSUMI'
-
-
-#Use this for windows authentication
+# Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
                                  "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
@@ -20,21 +12,26 @@ params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
 '''
 #Use this for SQL server authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=dagger;"
+                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
                                  "DATABASE=test;"
                                  "UID=user;"
                                  "PWD=password")
 '''
 
-#Connection String
+# Connection String
 engine = sa.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
 
 # Connect to the required SQL Server
-conn=engine.connect()
+conn = engine.connect()
 
-query = "SELECT * FROM dbo." + stock + " ORDER BY DATE ASC "
-data = pd.read_sql_query(query, con=conn, parse_dates=True)
-data['Date'] = pd.to_datetime(data['Date']).dt.strftime('%m/%d/%Y')
-data['Symbol'] = stock
+curr_dir = 'C:/Users/srinivas/PycharmProjects/data_analysis_all'
+file_list = [os.path.join(curr_dir, 'data', f) for f in os.listdir('../data')]
 
-print(data.tail())
+for file in file_list:
+    stock = file.split('\\')[-1].split('.')[0]
+    file_data = pd.read_csv(file, parse_dates=True)
+    # Load file data to SQL Table
+    file_data.to_sql(stock, con=conn, if_exists='replace', index=False)
+    print('Data Load is complete for stock : {}'.format(stock))
+
+print('Data Load is complete for all stocks')
