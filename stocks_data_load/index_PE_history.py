@@ -14,7 +14,7 @@ indices = ['NIFTY 50', 'NIFTY NEXT 50', 'NIFTY BANK', 'INDIA VIX', 'NIFTY 100', 
 
 #Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
+                                 "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
                                  "Trusted_Connection=yes")
 
@@ -49,7 +49,7 @@ for stk_index in indices:
     # df.fillna('',inplace=True)
     print("Start Data Load for the index : {}".format(stk_index))
     #Write data read from .csv to SQL Server table
-    data.to_sql(name=stk_index_sql+'_PE',con=conn,if_exists='append',index=False)
+    # data.to_sql(name=stk_index_sql+'_PE',con=conn,if_exists='append',index=False)
     print("Data Load done for the index : {}".format(stk_index))
 #Read data from a SQL server table
 # df1=pd.read_sql_table('STOCK_DATA',con=conn)

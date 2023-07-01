@@ -4,7 +4,6 @@ import sqlalchemy as sa
 import datetime as dt
 import pyodbc
 import urllib
-import quandl
 import yfinance as yf
 from nsepy import get_history
 
@@ -13,7 +12,7 @@ stock = 'TATAMOTORS'
 
 #Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
+                                 "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
                                  "Trusted_Connection=yes")
 
@@ -21,7 +20,7 @@ params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
 """
 #Use this for SQL server authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
+                                 "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
                                  "UID=user;"
                                  "PWD=password")

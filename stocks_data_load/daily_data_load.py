@@ -1,17 +1,22 @@
+import datetime
+
 import nsepy
 import pandas as pd
 from nsepy import get_history
+from jugaad_data import nse
 from datetime import date
 import sqlalchemy as sa
+from sqlalchemy import text
 import urllib.parse
 import re
+import nsetools
 
 
 class Dataload:
     # Class to enable bhav copy data extraction and load into corresponding tables in SQL for each stock
     # Use this for windows authentication
     params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                     "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
+                                     "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                      "DATABASE=NSEDATA;"
                                      "Trusted_Connection=yes")
 
@@ -35,16 +40,26 @@ class Dataload:
     def extract_bhav_copy(self, extract_date):
         # Method to extract bhav copy for the passed date
         try:
+            """
             # Extract stock specific bhav copy into a DataFrame
             bcopy = nsepy.history.get_price_list(dt=extract_date)
+            """
 
+            # Extract stock specific bhav copy into a DataFrame
+            bhav_data = nse.full_bhavcopy_raw(dt=extract_date).split("\n")
+            row_columns = bhav_data[0].split(", ")
+            data_rows = [row.split(", ") for row in bhav_data[1:]]
+            bcopy = pd.DataFrame(data_rows, columns=row_columns)
             # bcopy.to_csv('bhavcopy_'+today_dt.strftime('%d%m%Y')+'.csv',index=False)
             # Load entire bhav copy contents on stock specific data into SQL table
             bcopy.to_sql(name='BHAVCOPY', con=self.conn, if_exists='replace', index=False)
-            # return 'Bhav Copy extraction and data load is complete'
 
             # Extract Index specific bhav copy into a DataFrame
-            bcopy_indices = nsepy.history.get_indices_price_list(dt=extract_date)
+            # bcopy_indices = nsepy.history.get_indices_price_list(dt=extract_date)
+            bhav_index_data = nse.bhavcopy_index_raw(dt=extract_date).split("\n")
+            row_columns = bhav_index_data[0].split(",")
+            data_rows = [row.split(",") for row in bhav_index_data[1:]]
+            bcopy_indices = pd.DataFrame(data_rows, columns=row_columns)
 
             # bcopy.to_csv('bhavcopy_'+today_dt.strftime('%d%m%Y')+'.csv',index=False)
             # Load entire bhav copy contents on stock specific data into SQL table
@@ -81,15 +96,19 @@ class Dataload:
         data = pd.read_sql_query(bhav_query, con=self.conn, parse_dates=True)
         # Extract data of required columns from BHAVCOPY data as in the SQL tables format
         if data_type == 'Stock':
-            self.df_today = data.loc[:, ['SYMBOL', 'TIMESTAMP', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'TOTTRDQTY']]
-            self.df_today.rename(columns={'TIMESTAMP': 'Date', 'OPEN': 'Open', 'HIGH': 'High', 'LOW': 'Low',
-                                          'CLOSE': 'Close', 'TOTTRDQTY': 'Volume'}, inplace=True)
+            self.df_today = data.loc[:, ['SYMBOL', 'DATE1', 'OPEN_PRICE', 'HIGH_PRICE',
+                                         'LOW_PRICE', 'CLOSE_PRICE', 'TTL_TRD_QNTY']]
+            self.df_today.rename(columns={'DATE1': 'Date', 'OPEN_PRICE': 'Open', 'HIGH_PRICE': 'High',
+                                          'LOW_PRICE': 'Low', 'CLOSE_PRICE': 'Close', 'TTL_TRD_QNTY': 'Volume'},
+                                 inplace=True)
             self.df_today.set_index('SYMBOL', inplace=True)
         else:
-            self.df_today = data.loc[:, ['NAME', 'TIMESTAMP', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'TOTTRDQTY']]
-            self.df_today.rename(columns={'TIMESTAMP': 'Date', 'OPEN': 'Open', 'HIGH': 'High', 'LOW': 'Low',
-                                          'CLOSE': 'Close', 'TOTTRDQTY': 'Volume'}, inplace=True)
-            self.df_today.set_index('NAME', inplace=True)
+            self.df_today = data.loc[:, ['Index Name', 'Index Date', 'Open Index Value', 'High Index Value',
+                                         'Low Index Value', 'Closing Index Value', 'Volume']]
+            self.df_today.rename(columns={'Index Date': 'Date', 'Open Index Value': 'Open', 'High Index Value': 'High',
+                                          'Low Index Value': 'Low', 'Closing Index Value': 'Close', 'Volume': 'Volume'},
+                                 inplace=True)
+            self.df_today.set_index('Index Name', inplace=True)
             self.df_today['Date'] = pd.to_datetime(self.df_today['Date'], format='%d-%m-%Y')
     ##############################################################################################################
 
@@ -194,7 +213,7 @@ class Dataload:
             stock = 'NIFTY_FIN_SERVICE'
         # Extract maximum date for until which data is present in SQL for a stock
         query_max_date = "SELECT max(DATE) FROM dbo." + stock
-        startdate = Dataload.conn.execute(query_max_date)
+        startdate = Dataload.conn.execute(text(query_max_date))
         start_dt = startdate.fetchall()
         start_dt = start_dt[0][0]
         start_dt = pd.to_datetime(start_dt).date()
@@ -212,12 +231,17 @@ missing_data_load = {}
 
 if __name__ == '__main__':
     """ Call required methods in this module for data load """
-    # Get max date of a base stock like 'SBIN'
-    max_date = dataload.get_max_date()
-    # Increment max date to identify the start date for the data load
-    extract_start_date = max_date + pd.to_timedelta('1 day')
-    # Create a date range series for all the dates pending data load
-    extract_date_range = pd.Series(pd.date_range(start=extract_start_date, end=date.today(), freq='D'))
+    # adhoc_date = datetime.date(2023, 5, 17)
+    adhoc_date = None
+    if not adhoc_date:
+        # Get max date of a base stock like 'SBIN'
+        max_date = dataload.get_max_date()
+        # Increment max date to identify the start date for the data load
+        extract_start_date = max_date + pd.to_timedelta('1 day')
+        # Create a date range series for all the dates pending data load
+        extract_date_range = pd.Series(pd.date_range(start=extract_start_date, end=date.today(), freq='D'))
+    else:
+        extract_date_range = [adhoc_date]
     # Loop through the date range to call methods for the data load
     for extract_date in extract_date_range:
         extract_date = pd.to_datetime(extract_date).date()
@@ -246,7 +270,7 @@ if __name__ == '__main__':
                         except:
                             print('No data for the stock : {}'.format(stock))
                             continue
-                        if date_diff.days <= 0:
+                        if date_diff.days <= 0 and not adhoc_date:
                             print('skipped load for Stock : {}'.format(stock))
                             continue
                         try:
@@ -259,7 +283,7 @@ if __name__ == '__main__':
                     for nse_index in stocks_list:
                         date_diff = extract_date - dataload.get_max_date(nse_index)
 
-                        if date_diff.days <= 0:
+                        if date_diff.days <= 0 and not adhoc_date:
                             print('skipped load for Index : {}'.format(nse_index))
                             continue
                         try:

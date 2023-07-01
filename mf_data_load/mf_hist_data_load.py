@@ -11,7 +11,7 @@ mf = Mftool()
 
 #Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
+                                 "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                  "DATABASE=MFDATA;"
                                  "Trusted_Connection=yes")
 
@@ -38,19 +38,20 @@ df.columns = ['Code','Scheme_Name']
 df.to_sql(name='MF_SCHEME_CODES',con=conn,if_exists='replace',index=False)
 """
 
-query = "SELECT * FROM dbo.MF_SCHEME_DETAILS WHERE SCHEME_CODE IN (118482,120620,119064)"
+query = "SELECT * FROM dbo.MF_SCHEME_DETAILS WHERE SCHEME_CODE IN (122639,118834,118269,125307,118778,125497)"
 mf_data = conn.execute(query)
 mfunds = mf_data.fetchall()
-df = pd.DataFrame(mfunds,columns=['FundHouse','sch_type','sch_categoty','sch_code','sch_name','sch_start','sch_nav'])
+df = pd.DataFrame(mfunds, columns=['fund_house', 'scheme_type', 'scheme_category', 'scheme_code',
+                                   'scheme_name', 'scheme_start_date', 'scheme_nav'])
 
-end_year = 2021
+end_year = 2023
 
 for data in df.itertuples():
     code = data[4]
     print("Extract data for the Fund : {}".format(data[5]))
     # if code != 119550:
     #     continue
-    start_year = dt.strptime(data[6],'%d-%m-%Y').year
+    start_year = dt.strptime(data[6], '%d-%m-%Y').year
     fund_house = data[1].split(' ')[0]
     fund_name = data[5].split('-')[0].split(' ')
 

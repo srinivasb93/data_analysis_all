@@ -11,14 +11,14 @@ nse = Nse()
 
 connection = pyodbc.connect(
                             'Driver={SQL Server};'
-                            'Server=DESKTOP-BBENH2A\SQLEXPRESS;'
+                            'Server=IN01-9MCXZH3\SQLEXPRESS;'
                             'Database=NSEDATA;'
                             'Trusted_Connection=yes;'
                            )
 
 # Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
+                                 "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                  "DATABASE=StockAnalysis;"
                                  "Trusted_Connection=yes")
 

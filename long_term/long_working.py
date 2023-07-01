@@ -23,7 +23,7 @@ actions: Download stock dividends and stock splits events? (Default is True)
 
 #Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
-                                 "SERVER=DESKTOP-BBENH2A\SQLEXPRESS;"
+                                 "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                  "DATABASE=NSEDATA;"
                                  "Trusted_Connection=yes")
 
