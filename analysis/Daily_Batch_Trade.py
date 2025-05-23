@@ -58,7 +58,7 @@ def slope(ser, n):
     slope_angle = (np.rad2deg(np.arctan(np.array(slopes))))
     return slope_angle, reg_prices
 
-prices=pd.read_csv('../Stock_Symbol.csv')
+prices=pd.read_csv('../ref_data/Stock_Symbol.csv')
 stock_idx = 'NIFTY50'
 stock_list = prices['Symbol'].tolist()
 

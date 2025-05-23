@@ -29,7 +29,7 @@ file_list = [os.path.join(curr_dir, 'data', f) for f in os.listdir('../data')]
 
 for file in file_list:
     stock = file.split('\\')[-1].split('.')[0]
-    file_data = pd.read_csv(file, parse_dates=True)
+    file_data = pd.read_excel(file, parse_dates=True, sheet_name='Equity')
     # Load file data to SQL Table
     file_data.to_sql(stock, con=conn, if_exists='replace', index=False)
     print('Data Load is complete for stock : {}'.format(stock))

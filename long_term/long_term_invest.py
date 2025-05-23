@@ -156,9 +156,9 @@ class LongTermStrategy:
 # connection2.execute('SELECT * INTO dbo.ALL_DATA_BKP FROM ALL_DATA')
 
 cursor = connection.cursor()
-cursor.execute('select * from dbo.stocks_list')
+# cursor.execute('select * from dbo.stocks_list')
 # cursor.execute('select top 1* from dbo.SBIN')
-stock_list = cursor.fetchall()
+# stock_list = cursor.fetchall()
 cursor.close()
 final_data = pd.DataFrame()
 all_data = pd.DataFrame()

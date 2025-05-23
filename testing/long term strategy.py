@@ -30,7 +30,7 @@ connection2 = engine.connect()
 
 class LongTermStrategy:
     """ Class for analysing long term investing startegy for stocks"""
-    def __init__(self,stock_data=None,req_percent=.05):
+    def __init__(self, stock_data=None, req_percent=.05):
         self.stock_data = stock_data
         self.req_percent = req_percent
         # self.stock_data['EMA_20'] = self.stock_data['Close'].ewm(span=20).mean()
@@ -87,9 +87,12 @@ class LongTermStrategy:
             stock_data.loc[idx, "Bought_At"] = bought_at
         else:
             self.available_amount += self.fixed_amount
-            if bought_at == 'Base Price': stock_data.loc[idx, "Bought_At"] = 'No Funds_BP'
-            elif bought_at == 'Base Price 1': stock_data.loc[idx, "Bought_At"] = 'No Funds_BP1'
-            else : stock_data.loc[idx, "Bought_At"] = 'No Funds_BP2'
+            if bought_at == 'Base Price':
+                stock_data.loc[idx, "Bought_At"] = 'No Funds_BP'
+            elif bought_at == 'Base Price 1':
+                stock_data.loc[idx, "Bought_At"] = 'No Funds_BP1'
+            else:
+                stock_data.loc[idx, "Bought_At"] = 'No Funds_BP2'
         try:
             stock_data.loc[idx, "Average_Price"] = self.total_invested_amount // self.total_quantity
         except ZeroDivisionError:
@@ -152,6 +155,7 @@ class LongTermStrategy:
 # data_all.to_sql(name='ALL_DATA_BKP',con=connection2,if_exists='replace')
 # del data_all
 # gc.collect()
+
 connection2.execute('DROP TABLE IF EXISTS dbo.LONGTERM_COMBINED_BKP')
 connection2.execute('DROP TABLE IF EXISTS dbo.LONGTERM_IND_BKP')
 connection2.execute('DROP TABLE IF EXISTS dbo.ALL_DATA_BKP')
@@ -160,15 +164,19 @@ connection2.execute('SELECT * INTO dbo.LONGTERM_COMBINED_BKP FROM LONGTERM_COMBI
 connection2.execute('SELECT * INTO dbo.LONGTERM_IND_BKP FROM LONGTERM_IND')
 connection2.execute('SELECT * INTO dbo.ALL_DATA_BKP FROM ALL_DATA')
 
-cursor = connection.cursor()
-cursor.execute('select * from dbo.stocks')
-# cursor.execute('select top 1* from dbo.SBIN')
-stock_list = cursor.fetchall()
-cursor.close()
+# cursor = connection.cursor()
+# cursor.execute('select * from dbo.stocks_list')
+# # cursor.execute('select top 1* from dbo.SBIN')
+# stock_list = cursor.fetchall()
+# cursor.close()
 final_data = pd.DataFrame()
 all_data = pd.DataFrame()
-stock_list = ['MOTHERSUMI', 'BAJFINANCE', 'HDFCBANK', 'ASIANPAINT', 'RELAXO', 'SONATSOFTW', 'ICICIBANK', 'NESTLEIND'
+stock_list = ['MOTHERSON', 'BAJFINANCE', 'HDFCBANK', 'ASIANPAINT', 'RELAXO', 'SONATSOFTW', 'ICICIBANK', 'NESTLEIND'
               , 'KOTAKBANK', 'BRITANNIA', 'RELIANCE', 'TITAN', 'HINDUNILVR', 'PIDILITIND', 'ITC', 'INFY', 'TCS']
+
+# stock_list = ['TATAMOTORS', 'ITC', 'SONATSOFTW', 'ICICIBANK', 'INFY', 'SBIN',
+#               'UNIONBANK', 'TCS', 'TVSMOTOR', 'TATAPOWER', 'ONGC', 'COALINDIA',
+#               'TRITURBINE']
 
 for stock in stock_list:
     print(f'Processing Stock : {stock}')
@@ -183,7 +191,7 @@ for stock in stock_list:
     stock_trigger = LongTermStrategy(stock_data)
     stock_trigger.calculate_base_price()
     stock_data['Symbol'] = stock
-    values = {'Buy_Qty' : 0, 'Bought_At' : ' '}
+    values = {'Buy_Qty': 0, 'Bought_At': ' '}
     stock_data.fillna(value=values, inplace=True)
     stock_data.fillna(method='ffill', inplace=True)
     stock_data['PnL'] = round(stock_data['Current_Value'] - stock_data['Invested_Amt'], 2)
@@ -194,25 +202,25 @@ for stock in stock_list:
 tot_investment = round(final_data['Invested_Amt'].sum(), 2)
 curr_value = round(final_data['Current_Value'].sum(), 2)
 all_data.reset_index(inplace=True)
-all_data.to_sql(name='ALL_DATA',con=connection2,if_exists='replace')
+all_data.to_sql(name='ALL_DATA', con=connection2, if_exists='replace')
 all_data_grouped = all_data.groupby(['Date'])
 grouped_dict = {}
 
-for group_name,group_data in all_data_grouped:
+for group_name, group_data in all_data_grouped:
     act_date = group_name
     tot_invested = group_data['Invested_Amt'].sum()
     tot_curr_val = group_data['Current_Value'].sum()
     tot_profit = group_data['PnL'].sum()
-    grouped_dict.update({act_date:{'Total_Invested':tot_invested,
-                         'Current_Value':tot_curr_val,'PnL':tot_profit}})
+    grouped_dict.update({act_date: {'Total_Invested': tot_invested,
+                         'Current_Value': tot_curr_val, 'PnL': tot_profit}})
 
 combined_data = pd.DataFrame.from_dict(grouped_dict, orient='index')
 combined_data['Invested_on_day'] = round(combined_data['Total_Invested'] - combined_data['Total_Invested'].shift(1), 2)
 combined_data['Value_Change'] = round(combined_data['Current_Value'] - combined_data['Current_Value'].shift(1), 2)
 combined_data['PnL_Change'] = round(combined_data['PnL'] - combined_data['PnL'].shift(1))
-combined_data['PnL_%'] = round((combined_data['PnL']/combined_data['Total_Invested'])*100,2)
-combined_data = combined_data[['Total_Invested','Invested_on_day','Current_Value',
-                         'Value_Change','PnL','PnL_Change','PnL_%']]
+combined_data['PnL_%'] = round((combined_data['PnL']/combined_data['Total_Invested'])*100, 2)
+combined_data = combined_data[['Total_Invested', 'Invested_on_day', 'Current_Value',
+                               'Value_Change', 'PnL', 'PnL_Change', 'PnL_%']]
 combined_data.to_sql(name='LONGTERM_COMBINED', con=connection2, if_exists='replace')
 # combined_data.plot(y=['Total_Invested','Current_Value'])
 # plt.show()
@@ -221,9 +229,11 @@ print('Total Investment : {:,}'.format(tot_investment))
 print('Present Market Value : {:,}'.format(curr_value))
 print(f'PnL : {round((curr_value-tot_investment), 2)}')
 
-final_data = final_data[['Symbol','Total_Qty','Average_Price','Close','Invested_Amt','Current_Value','PnL']]
-final_data['PnL_%'] = round((final_data['PnL']/final_data['Invested_Amt'])*100,2)
-final_data.to_sql(name='LONGTERM_IND', con=connection2, if_exists='replace',index=False)
+final_data = final_data[['Symbol', 'Total_Qty', 'Average_Price', 'Close',
+                         'Invested_Amt', 'Current_Value', 'PnL']]
+final_data['PnL_%'] = round((final_data['PnL']/final_data['Invested_Amt'])*100, 2)
+final_data.reset_index(inplace=True)
+final_data.to_sql(name='LONGTERM_IND', con=connection2, if_exists='replace', index=False)
 
 connection.close()
 connection2.close()

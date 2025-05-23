@@ -1,7 +1,7 @@
 from mftool import Mftool
 import nsepy
 from nsepy import get_history
-from datetime import date,datetime as dt
+from datetime import date, datetime as dt
 import datetime as dtm
 import sqlalchemy as sa
 import urllib.parse
@@ -9,7 +9,7 @@ import pandas as pd
 
 mf = Mftool()
 
-#Use this for windows authentication
+# Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
                                  "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
                                  "DATABASE=MFDATA;"
@@ -24,11 +24,11 @@ params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
                                  "PWD=password")
 '''
 
-#Connection String
+# Connection String
 engine = sa.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
 
 # Connect to the required SQL Server
-conn=engine.connect()
+conn = engine.connect()
 
 """
 # Code to extract and load the scheme name and codes of all MFs
@@ -38,12 +38,11 @@ df.columns = ['Code','Scheme_Name']
 df.to_sql(name='MF_SCHEME_CODES',con=conn,if_exists='replace',index=False)
 """
 
-query = "SELECT * FROM dbo.MF_SCHEME_DETAILS "
+query = "SELECT * FROM dbo.MF_SCHEME_DETAILS"
 mf_data = conn.execute(query)
 mfunds = mf_data.fetchall()
-df = pd.DataFrame(mfunds,columns=['FundHouse','sch_type','sch_categoty','sch_code','sch_name','sch_start','sch_nav'])
-
-end_year = 2021
+df = pd.DataFrame(mfunds,
+                  columns=['FundHouse', 'sch_type', 'sch_categoty', 'sch_code', 'sch_name', 'sch_start', 'sch_nav'])
 
 for data in df.itertuples():
     code = data[4]
@@ -51,10 +50,12 @@ for data in df.itertuples():
     # if code != 119550:
     #     continue
     fund_house = data[1].split(' ')[0]
+    fund_type = "DIRECT" if "DIRECT" in data[5].upper() else "REGULAR"
     fund_name = data[5].split('-')[0].split(' ')
     fund_name = fund_name[0] + '_' + '_'.join(fund_name[-4:-1])
-    fund_name = fund_name.replace('_&_','_') if '&' in fund_name else fund_name
-    tbl_name = fund_name.upper()
+    fund_name = fund_name.replace('_&_', '_') if '&' in fund_name else fund_name
+    tbl_name = fund_name.upper() + f'_{str(code)}_' + fund_type
+
     query = 'select max(date) from dbo.'+tbl_name
     max_date = conn.execute(query)
     max_date = max_date.fetchall()[0][0]

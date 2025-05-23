@@ -58,7 +58,7 @@ def slope(ser, n):
     slope_angle = (np.rad2deg(np.arctan(np.array(slopes))))
     return slope_angle, reg_prices
 
-prices=pd.read_csv('../Stock_Symbol.csv')
+prices=pd.read_csv(r"C:\Users\sba400\PycharmProjects\data_analysis\ref_data\Stock_Symbol.csv")
 stock_idx = 'NIFTY50'
 stock_list = prices['Symbol'].tolist()
 
@@ -89,7 +89,7 @@ for stock in stock_list:
         stock = 'MM'
     print(stock)
     # query = "SELECT * FROM dbo." + stock + " WHERE DATE >='2020-10-20 00:00:00.000' AND DATE <'2021-01-05 00:00:00.000' ORDER BY DATE ASC "
-    query = "SELECT * FROM dbo." + stock + " WHERE DATE >='2020-11-25 00:00:00.000' ORDER BY DATE ASC "
+    query = "SELECT * FROM dbo." + stock + " WHERE DATE >='2023-06-01 00:00:00.000' ORDER BY DATE ASC "
     data = pd.read_sql_query(query, con=conn, parse_dates=True)
     data['Date'] = pd.to_datetime(data['Date']).dt.strftime('%m/%d/%Y')
     data['Symbol'] = stock

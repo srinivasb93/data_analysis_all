@@ -231,8 +231,8 @@ missing_data_load = {}
 
 if __name__ == '__main__':
     """ Call required methods in this module for data load """
-    # adhoc_date = datetime.date(2023, 5, 17)
     adhoc_date = None
+    # adhoc_date = datetime.date(2023, 3, 14)
     if not adhoc_date:
         # Get max date of a base stock like 'SBIN'
         max_date = dataload.get_max_date()
@@ -259,6 +259,7 @@ if __name__ == '__main__':
             for stock_type in stock_index:
                 # Get list of stocks/indices
                 stocks_list = list(zip(*dataload.get_stocks_index_data(stock_type)))[0]
+                # stocks_list = ['TRITURBINE']
                 # Read Bhav Data for Stocks or Indices
                 dataload.read_bhav_data(stock_type)
                 if stock_type == 'Stock':

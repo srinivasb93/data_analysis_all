@@ -5,23 +5,23 @@ import datetime as dt
 import urllib
 import yfinance as yf
 from nsepy import get_history
+from jugaad_data import nse
 
-startdate = dt.date(2007, 1, 1)
+startdate = dt.date(2010, 1, 1)
 enddate = dt.date.today()
-
 
 def adj_close(data, stock):
     df_adj = data.copy()
     no_of_splits = split_count_dict[stock]
-    stock_split_info = split_df[split_df['Stock'] == stock].copy()
-    stock_split_info['Date'] = pd.to_datetime(stock_split_info['Date'])
+    stock_split_info = split_df[split_df['SYMBOL'] == stock].copy()
+    stock_split_info['DATE'] = pd.to_datetime(stock_split_info['DATE'])
     for i in range(no_of_splits):
         try:
-            to_be_split = (df_adj['Date'] < stock_split_info.iloc[i, 0])
+            to_be_split = (df_adj['Date'] < stock_split_info.iloc[i, 1])
         except:
             continue
         df_adj.loc[to_be_split, ['Open', 'High', 'Low', 'Close']] = \
-            round(df_adj.loc[to_be_split, ['Open', 'High', 'Low', 'Close']]/stock_split_info.iloc[i, 1], 2)
+            round(df_adj.loc[to_be_split, ['Open', 'High', 'Low', 'Close']]*stock_split_info.iloc[i, 3], 2)
     return df_adj
 
 # Use this for windows authentication
@@ -45,7 +45,7 @@ engine = sa.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
 # Connect to the required SQL Server
 conn = engine.connect()
 
-query_split = "SELECT * FROM DBO.STOCK_SPLIT_DATA WHERE STOCK_INDEX = 'NIFTY 200'"
+query_split = "SELECT * FROM DBO.SPLIT_BONUS_DATA"
 # query_split = "SELECT * FROM DBO.STOCK_SPLIT_DATA WHERE STOCK_INDEX = 'NIFTY 50'"
 split_df = pd.read_sql(query_split, con=conn, parse_dates=True)
 
@@ -61,16 +61,20 @@ SELECT  [SYMBOL]  FROM [NSEDATA].[dbo].[ALL_STOCKS] where stk_index = 'NIFTY MID
 # query = "SELECT SYMBOL FROM DBO.ALL_STOCKS WHERE STK_INDEX = 'NIFTY 50'"
 stocks_df = pd.read_sql(query_stocks, con=conn)
 stocks = stocks_df['SYMBOL'].tolist()
-# stocks = ['GLAND']
+stocks = ['SONATSOFTW']
 
-split_count_dict = dict(split_df['Stock'].value_counts())
-split_stocks_list = split_df['Stock'].unique().tolist()
+split_count_dict = dict(split_df['SYMBOL'].value_counts())
+split_stocks_list = split_df['SYMBOL'].unique().tolist()
 x = 0
 
 for stock in stocks:
     print("Extracting Data from NSE for the stock : {}" .format(stock))
-    data = get_history(symbol=stock, start=startdate, end=enddate)
+    # data = get_history(symbol=stock, start=startdate, end=enddate)
+    data = nse.stock_df(symbol=stock, from_date=startdate, to_date=enddate)
     data.reset_index(inplace=True)
+    data.rename(columns={'DATE': 'Date', 'OPEN': 'Open', 'HIGH': 'High',
+                         'LOW': 'Low', 'CLOSE': 'Close', 'VOLUME': 'Volume'},
+                         inplace=True)
     data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d')
     stock_data = data[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].copy()
     # Calculate stock prices based on stock split or bonus shares issued

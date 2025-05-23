@@ -12,7 +12,7 @@ mf = Mftool()
 #Use this for windows authentication
 params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
                                  "SERVER=IN01-9MCXZH3\SQLEXPRESS;"
-                                 "DATABASE=MFDATA;"
+                                 "DATABASE=ANALYTICS;"
                                  "Trusted_Connection=yes")
 
 '''
@@ -38,13 +38,15 @@ df.columns = ['Code','Scheme_Name']
 df.to_sql(name='MF_SCHEME_CODES',con=conn,if_exists='replace',index=False)
 """
 
-query = "SELECT * FROM dbo.MF_SCHEME_DETAILS WHERE SCHEME_CODE IN (135781,120603,119755,118825,118834,120505,120503,118269,146130,118834,118778,\
-122639,125307,118791,109445,113177,118825,112932,112323,135783,118825,118834)"
+my_funds = (135781, 120603, 119755, 118825, 118834, 120505, 120503, 118269, 146130, 118834, 118778, 122639, 125307,
+            118791, 109445, 113177, 118825, 112932, 112323, 135783, 118825, 118834)
+query = f"SELECT * FROM MFDATA.dbo.MF_SCHEME_DETAILS WHERE SCHEME_CODE IN {my_funds}"
 
 mf_data = conn.execute(query)
 mfunds = mf_data.fetchall()
 df = pd.DataFrame(mfunds, columns=['fund_house', 'scheme_type', 'scheme_category', 'scheme_code',
                                    'scheme_name', 'scheme_start_date', 'scheme_nav'])
+df1 = pd.DataFrame()
 
 for data in df.itertuples():
     code = data[4]
@@ -60,28 +62,21 @@ for data in df.itertuples():
     fund_name = fund_name.replace('_&_', '_') if '&' in fund_name else fund_name
 
     tbl_name = fund_name.upper() + f'_{str(code)}_' + fund_type
-    df1 = pd.DataFrame()
 
     try:
-        mf_hist_data = mf.get_scheme_historical_nav(code=code, as_Dataframe=True)
+        mf_hist_data = pd.DataFrame([mf.get_scheme_quote(code=code)])
     except Exception as e:
         print(e)
         print("Data Load not done for the Fund : {}".format(data[5]))
         continue
-    mf_hist_data.reset_index(inplace=True)
-    mf_hist_data['date'] = pd.to_datetime(mf_hist_data['date'], format='%d-%m-%Y')
-    mf_hist_data['nav'] = mf_hist_data['nav'].astype(dtype=float)
-    mf_hist_data['nav'].replace(0, method='pad', inplace=True)
-    mf_hist_data.sort_values(by='date', ascending=True, inplace=True)
-    mf_hist_data['nav_chg_daily'] = round(mf_hist_data['nav'].pct_change() * 100, 2)
-    mf_hist_data['nav_chg_wkly'] = round(mf_hist_data['nav'].pct_change(periods=5) * 100, 2)
-    mf_hist_data['nav_chg_mth'] = round(mf_hist_data['nav'].pct_change(periods=20) * 100, 2)
+    df1 = df1.append(mf_hist_data, ignore_index=True)
 
-    try:
-        mf_hist_data.to_sql(name=tbl_name, con=conn, if_exists='replace', index=False)
-    except Exception as e:
-        print('error is : {}'.format(e))
-        print("Data Load not done for the Fund : {}".format(data[5]))
-        continue
-    print("Data Load done for the Fund : {}".format(data[5]))
+
+try:
+    df1.to_sql(name="LATEST_NAV_SNAPSHOT", con=conn, if_exists='replace', index=False)
+except Exception as e:
+    print('error is : {}'.format(e))
+    print("Snapshot Data load failed")
+
+print("Data Load is successful!!!!")
 

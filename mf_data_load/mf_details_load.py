@@ -29,16 +29,23 @@ conn = engine.connect()
 
 mf = Mftool()
 
+"""
+mf_data = mf._codes
+df = pd.DataFrame([(key, value) for d in mf_data for key, value in d.items()], columns=['Scheme_Code', 'Scheme_Name'])
+df.to_sql(name='MF_SCHEME_CODES_HIST', con=conn, if_exists='replace', index=False)
+"""
+
 # df = pd.DataFrame(mf.get_all_amc_profiles(as_json=False))
 """
 # Code to extract and load the scheme name and codes of all MFs
-df = pd.DataFrame.from_dict(mf.get_scheme_codes(as_json=False),orient='index')
+df = pd.DataFrame.from_dict(mf.get_scheme_codes(as_json=False), orient='index')
 df.reset_index(inplace=True)
-df.columns = ['Code','Scheme_Name']
-df.to_sql(name='MF_SCHEME_CODES',con=conn,if_exists='replace',index=False)
-"""
+df.columns = ['Code', 'Scheme_Name']
+df.to_sql(name='MF_SCHEME_CODES', con=conn, if_exists='replace', index=False)
+print("Data loaded successfully")
 
-query = "SELECT code FROM dbo.MF_SCHEME_CODES where CheckIt='Y' "
+"""
+query = "SELECT code FROM dbo.MF_SCHEME_CODES where [code] in (120841)"
 mf_data = conn.execute(query)
 mfunds = mf_data.fetchall()
 df_all = pd.DataFrame()
@@ -56,5 +63,5 @@ for fund in mfunds:
         continue
 
 # scheme_nav = df_all['scheme_start_date'].values[0]['nav']
-df_all.to_sql(name='MF_SCHEME_DETAILS', con=conn, if_exists='replace', index=False)
+df_all.to_sql(name='MF_SCHEME_DETAILS', con=conn, if_exists='append', index=False)
 print(df_all.tail())

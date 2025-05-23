@@ -4,9 +4,12 @@ Detailed Implementation: https://tradewithpython.com/cleaning-splits-and-bonus-d
 Any comments/feedback/questions, please reach out to me on Linkedin/Twitter, links in the article.
 
 """
-
 import pandas as pd
 from stocks_data_load.daily_data_load import Dataload
+
+a = 10
+b = "My age is " + a
+print(format.__format__(b))
 
 dataload_obj = Dataload()
 params = dataload_obj.params

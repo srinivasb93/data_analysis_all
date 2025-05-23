@@ -1,7 +1,7 @@
 
 import pandas as pd
 import sqlalchemy as sa
-import datetime as dt
+from datetime import datetime as dt
 import pyodbc
 import urllib
 import yfinance as yf
@@ -32,11 +32,11 @@ engine = sa.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
 # Connect to the required SQL Server
 conn=engine.connect()
 
-date_today = pd.datetime.dt.today()
-start_dt = date_today - dt.timedelta(1825)
-start_dt = start_dt.strftime(format='%Y-%m-%d')
+# date_today = dt.today()
+# start_dt = date_today - dt.timedelta(1825)
+# start_dt = start_dt.strftime(format='%Y-%m-%d')
 
-query = "SELECT NAME FROM dbo.STOCKS UNION SELECT NAME FROM dbo.STOCK_INDICES UNION SELECT NAME FROM dbo.STOCK_SECTORS"
+query = "SELECT SYMBOL FROM dbo.ALL_STOCKS"
 stocks_data = conn.execute(query)
 stocks = stocks_data.fetchall()
 stock_list = [stock[0] for stock in stocks]

@@ -40,6 +40,7 @@ stocks = all_data['SYMBOL'].values
 start_date = dt.date(2007, 1, 1)
 end_date = dt.date.today()
 stk_split_data = pd.DataFrame()
+stocks = ['MOTHERSON']
 
 for stock in stocks:
     print(stock)
@@ -51,5 +52,6 @@ for stock in stocks:
     stk_split_data = stk_split_data.append(split_data)
     print(split_data)
 
+stk_split_data['Date'] = pd.to_datetime(stk_split_data['Date']).dt.date
 stk_split_data['STOCK_INDEX'] = 'NIFTY 200'
 stk_split_data.to_sql('STOCK_SPLIT_DATA', con=conn, index=False, if_exists='append')
